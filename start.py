@@ -17,10 +17,9 @@ def get_api_key():
     try:
         with open(secret_path, "r") as file:
             data = file.read()
-            use_local = questionary.confirm(
+            if use_local := questionary.confirm(
                 "Found API key from ~/.papergpt/, would you like to use it?"
-            ).ask()
-            if use_local:
+            ).ask():
                 temp_api_key = data
             else:
                 temp_api_key = None
@@ -32,10 +31,9 @@ def get_api_key():
         "What is your OpenAI API key? (See https://help.openai.com/en/articles/4936850-where-do-i-find-my-secret-api-key)"
     ).ask()
     if temp_api_key:
-        save = questionary.confirm(
+        if save := questionary.confirm(
             "Would you like to save the API key to ~/.papergpt/ ?"
-        ).ask()
-        if save:
+        ).ask():
             os.makedirs(os.path.dirname(secret_path), exist_ok=True)
             with open(secret_path, "w") as file:
                 file.write(temp_api_key)
@@ -58,9 +56,8 @@ def get_paper_url():
                     content_type = response.headers["Content-Type"]
                     if content_type == "application/pdf":
                         return paper_url
-                    else:
-                        print("URL does not point to a PDF file")
-                        continue
+                    print("URL does not point to a PDF file")
+                    continue
                 except requests.exceptions.RequestException:
                     print("Error: Could not retrieve URL")
                     continue
@@ -115,16 +112,14 @@ if __name__ == "__main__":
         print("Error getting API key. Exiting...")
         exit(0)
     ChatGPTWrapper.init(api_key)
-    load_from_cache = questionary.confirm(
+    if load_from_cache := questionary.confirm(
         "Would you like to load curated paper from local cache?"
-    ).ask()
-    if load_from_cache:
+    ).ask():
         curated_paper = load_curated_paper()
     else:
-        load_local_pdf = questionary.confirm(
+        if load_local_pdf := questionary.confirm(
             "Would you like to load a local PDF file?"
-        ).ask()
-        if load_local_pdf:
+        ).ask():
             pdf_path = get_pdf_path()
             pdf_wrapper = PDFWrapper.from_local_file(pdf_path)
         else:
@@ -132,9 +127,8 @@ if __name__ == "__main__":
             pdf_wrapper = PDFWrapper.from_url(url)
         print("Curating PaperGPT... This may take several minutes.")
         curated_paper = CuratedPaper(pdf_wrapper)
-        save_paper = questionary.confirm(
+        if save_paper := questionary.confirm(
             "Curation finished. Would you like to save the curated paper to local cache?"
-        ).ask()
-        if save_paper:
+        ).ask():
             save_curated_paper(curated_paper)
     conversation(curated_paper)

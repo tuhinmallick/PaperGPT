@@ -32,11 +32,10 @@ class CuratedPaper:
             return self.page_summary_map[page_num]
         page_text = self.pdf_wrapper.get_page(page_num)
         prompt = self.TEMPLATE_SUMMARY.format(content=page_text)
-        answer = ChatGPTWrapper.ask(
+        return ChatGPTWrapper.ask(
             prompt=prompt,
             max_tokens=self.per_page_limit,
         )
-        return answer
 
     def curate_summary_all(self):
         num_pages = self.pdf_wrapper.get_num_pages()
@@ -49,8 +48,7 @@ class CuratedPaper:
                 summaries.append(summary_with_page)
                 bar()
 
-        summary_all = "\n\n".join(summaries)
-        return summary_all
+        return "\n\n".join(summaries)
 
     def get_best_page_for_answer(self, question: str):
         prompt = self.TEMPLATE_QUESTION_GET_PAGE.format(
@@ -58,9 +56,7 @@ class CuratedPaper:
         )
         answer = ChatGPTWrapper.ask(prompt=prompt, max_tokens=10)
         page_num = re.search(r"\d+", answer)
-        if page_num is None:
-            return None
-        return int(page_num.group())
+        return None if page_num is None else int(page_num.group())
 
     def get_answer_from_page(self, question: str, page_num: int):
         page_text = self.pdf_wrapper.get_page(page_num - 1)
@@ -76,21 +72,19 @@ class CuratedPaper:
         prompt = self.TEMPLATE_ANSWER_WITH_SUMMARY.format(
             question=question, all_summaries=self.summary_all
         )
-        answer = ChatGPTWrapper.ask(prompt=prompt)
-        return answer
+        return ChatGPTWrapper.ask(prompt=prompt)
 
     def get_answer_full_process(self, question: str):
         best_page = self.get_best_page_for_answer(question)
-        if best_page is None:
-            answer = self.get_answer_from_summary(question)
-        else:
-            answer = self.get_answer_from_page(question, best_page)
-        return answer
+        return (
+            self.get_answer_from_summary(question)
+            if best_page is None
+            else self.get_answer_from_page(question, best_page)
+        )
 
     def get_intro(self):
         prompt = self.TEMPLATE_INTRO.format(all_summaries=self.summary_all)
-        answer = ChatGPTWrapper.ask(prompt=prompt)
-        return answer
+        return ChatGPTWrapper.ask(prompt=prompt)
 
     def save_to_local(self, path: str):
         with open(path, "wb") as f:
